@@ -1,0 +1,11 @@
+imageio~=2.13.5
+matplotlib~=3.5.1
+Nib~=0.5.7
+numpy~=1.22.0
+scikit-image~=0.19.1
+scipy~=1.7.3
+sympy~=1.9
+Shapely~=1.8.0
+Pillow~=9.0.0
+pydicom~=2.2.2
+nibabel~=3.2.1
