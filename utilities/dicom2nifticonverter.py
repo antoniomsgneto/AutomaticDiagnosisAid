@@ -9,7 +9,7 @@ import os
 import gzip
 import shutil
 
-SHORT_AXIS_FOLDER_NAME = '/SACine401/'
+SHORT_AXIS_FOLDER_NAME = ['/SACine401/','/SAcine401','/sacine401']
 
 
 def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_folder, patient_identification):
@@ -17,17 +17,21 @@ def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_fold
     __make_folder(path_to_nifti_folder)
     # Get main folder and divide images between Cuts and inside Cuts between Slices
     convert_to_folders(path_to_dicom_folder, path_to_result_folder)
-    path_to_short_axis = path_to_result_folder + SHORT_AXIS_FOLDER_NAME
-    # Sort short axis slice folders from lowest to highest
-    file_list = os.listdir(path_to_short_axis)
-    file_list.sort(key=lambda x: float(x))
-    for count, folder in enumerate(file_list):
-        print("Converting slice: " + folder)
-        # Get all files from slice folder convert to numpy array and from that to nifti
-        convert_slice_folder_to_nifti(path_to_short_axis + folder,
-                                      path_to_nifti_folder + patient_identification + str(count))
+    for name in SHORT_AXIS_FOLDER_NAME:
+        path_to_short_axis = path_to_result_folder + name
+        count = 0
+        if os.path.exists(path_to_short_axis):
+            # Sort short axis slice folders from lowest to highest
+            file_list = os.listdir(path_to_short_axis)
+            file_list.sort(key=lambda x: float(x))
+            for folder in file_list:
+                print("Converting slice: " + folder)
+                # Get all files from slice folder convert to numpy array and from that to nifti
+                convert_slice_folder_to_nifti(path_to_short_axis +'/'+ folder,
+                                              path_to_nifti_folder + patient_identification + str(count))
+                count += 1
     gzip_files(path_to_nifti_folder)
-    shutil.rmtree(path_to_result_folder)
+    #shutil.rmtree(path_to_result_folder)
 
 
 def convert_to_folders(path_to_dicom_folder, path_to_result_folder):
@@ -94,11 +98,9 @@ def __make_folder(folder):
 
 def main():
     if sys.argv[0]:
-        count = 1
-        for dir in os.listdir(sys.argv[1]):
+        for count, dir in enumerate(os.listdir(sys.argv[1])):
             patient_identification = '/Patient10'+str(count)+'_'
             full_convert(sys.argv[1] + '/' + dir, sys.argv[2], sys.argv[3], patient_identification)
-
 
 if __name__ == "__main__":
     main()
