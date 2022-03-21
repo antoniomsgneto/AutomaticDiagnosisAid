@@ -28,7 +28,7 @@ def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_fold
                 print("Converting slice: " + folder)
                 # Get all files from slice folder convert to numpy array and from that to nifti
                 convert_slice_folder_to_nifti(path_to_short_axis + '/' + folder,
-                                              path_to_nifti_folder + patient_identification + str(count))
+                                              path_to_nifti_folder + patient_identification + str(count) + '_0000')
                 count += 1
     gzip_files(path_to_nifti_folder)
     shutil.rmtree(path_to_result_folder)
