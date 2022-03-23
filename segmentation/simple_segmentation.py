@@ -20,8 +20,10 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
     np_pixdata = np.array(img)
     # np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 2)])
     an_array = np.where(np_pixdata != 2, 0, np_pixdata)
-    img = rgb2gray(an_array)
-
+    if an_array.shape[-1] == 3:
+        img = rgb2gray(an_array)
+    else:
+        img = an_array
     s = np.linspace(0, 2 * np.pi, 400)
     r = 250 + 50 * np.sin(s)
     c = 280 + 50 * np.cos(s)
