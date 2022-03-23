@@ -1,6 +1,6 @@
 import imageio
 import nibabel as nib
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from skimage.segmentation import active_contour
 from skimage.color import rgb2gray
