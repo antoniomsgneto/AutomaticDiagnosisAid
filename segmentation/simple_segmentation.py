@@ -13,6 +13,8 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
     print(nifti_image_pred)
     img_nifti = nib.load(nifti_image_pred)
     img = img_nifti.get_data()[:, :, frame]
+    print(img.shape)
+
     fig = plt.figure(figsize=(9, 9))
     ax = fig.add_subplot(111)
     plt.gray()
@@ -20,10 +22,8 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
     np_pixdata = np.array(img)
     # np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 2)])
     an_array = np.where(np_pixdata != 2, 0, np_pixdata)
-    if an_array.shape[-1] == 3:
-        img = rgb2gray(an_array)
-    else:
-        img = an_array
+    img = rgb2gray(an_array)
+
     s = np.linspace(0, 2 * np.pi, 400)
     r = 250 + 50 * np.sin(s)
     c = 280 + 50 * np.cos(s)
@@ -45,7 +45,7 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
     ax.plot(center_of_mass[1], center_of_mass[0], "or")
     ax.axis([0, img.shape[1], img.shape[0], 0])
 
-    fig_name = snake_directory + '/' + str(patient_str) + '.png'
+    fig_name = snake_directory + '/' + str(patient_str)+str(frame) + '.png'
     fig.savefig(fig_name)
     return fig_name
 
@@ -58,7 +58,7 @@ def segment_patient(path_to_file, path_to_output_folder):
             fig_list.append(snake_segmentation_without_dots(path_to_file, patient_str, i, path_to_output_folder))
         except Exception as e:
             print(e)
-    save_gif_2d(patient_str, fig_list)
+    save_gif_2d(path_to_output_folder+'/'+patient_str, fig_list)
 
 
 def save_gif_2d(patient_str, fig_list):
