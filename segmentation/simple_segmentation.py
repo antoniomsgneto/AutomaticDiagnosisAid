@@ -24,13 +24,13 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
     an_array = np.where(np_pixdata != 2, 0, np_pixdata)
     img = rgb2gray(an_array)
 
-    s = np.linspace(0, 2 * np.pi, 400)
+    s = np.linspace(0, 2 * np.pi, 500)
     r = 250 + 50 * np.sin(s)
     c = 280 + 50 * np.cos(s)
     init = np.array([r, c]).T
     snake = active_contour(gaussian(img, 3),
                            init, boundary_condition="periodic",
-                           alpha=0.015, beta=10, gamma=0.001, w_line=4, w_edge=8, max_iterations=5000)
+                           alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
 
     # np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 3)])
     an_array = np.where(np_pixdata != 3, 0, np_pixdata)
