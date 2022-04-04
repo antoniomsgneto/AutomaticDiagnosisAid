@@ -1,3 +1,4 @@
+import nibabel as nib
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -46,6 +47,7 @@ class Measures:
     pix_z = 10
 
     def calculate_values2(self, image, slice_number, pixel_value):
+        image = nib.load(image)
         img = image.get_data()[:, :, slice_number]
         np_pixdata = np.array(img)
         np_counter = np.count_nonzero(np_pixdata[(np_pixdata == pixel_value)]) * self.pixel_area
