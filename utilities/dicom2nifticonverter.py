@@ -9,7 +9,7 @@ import os
 import gzip
 import shutil
 
-SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401', '/sacine401']
+SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401', '/sacine401','2CHCine401',]
 
 
 def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_folder, patient_identification):
@@ -17,21 +17,34 @@ def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_fold
     __make_folder(path_to_nifti_folder)
     # Get main folder and divide images between Cuts and inside Cuts between Slices
     convert_to_folders(path_to_dicom_folder, path_to_result_folder)
-    for name in SHORT_AXIS_FOLDER_NAME:
-        path_to_short_axis = path_to_result_folder + name
-        count = 0
-        if os.path.exists(path_to_short_axis):
-            # Sort short axis slice folders from lowest to highest
-            file_list = os.listdir(path_to_short_axis)
-            file_list.sort(key=lambda x: float(x))
-            for folder in file_list:
-                print("Converting slice: " + folder)
-                # Get all files from slice folder convert to numpy array and from that to nifti
-                convert_slice_folder_to_nifti(path_to_short_axis + '/' + folder,
-                                              path_to_nifti_folder + patient_identification + str(count) + '_0000')
-                count += 1
+    folder = max(SHORT_AXIS_FOLDER_NAME, key=lambda f: count_directory_size(path_to_result_folder + f))
+
+    path_to_short_axis = path_to_result_folder + folder
+    count = 0
+
+    if os.path.exists(path_to_short_axis):
+        # Sort short axis slice folders from lowest to highest
+        file_list = os.listdir(path_to_short_axis)
+        file_list.sort(key=lambda x: float(x))
+        for folder in file_list:
+            print("Converting slice: " + folder)
+            # Get all files from slice folder convert to numpy array and from that to nifti
+            convert_slice_folder_to_nifti(path_to_short_axis + '/' + folder,
+                                          path_to_nifti_folder + patient_identification + str(count) + '_0000')
+            count += 1
     gzip_files(path_to_nifti_folder)
     shutil.rmtree(path_to_result_folder)
+
+
+def count_directory_size(dir_path: str) -> int:
+    count = 0
+    # Iterate directory
+    if os.path.exists(dir_path):
+        for path in os.listdir(dir_path):
+            # check if current path is a file
+            if os.path.isfile(os.path.join(dir_path, path)):
+                count += 1
+    return count
 
 
 def convert_to_folders(path_to_dicom_folder, path_to_result_folder):

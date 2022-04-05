@@ -56,28 +56,49 @@ class Measures:
     def calculate_volume(self, image_list, frame):
         volume = 0
         for i in range(len(image_list)):
-            print(i, frame)
-            area = self.calculate_values2(image_list[i], frame, 2)
-            print(area, "mm")
+            # print(i, frame)
+            area = self.calculate_values2(image_list[i], frame, 3)
+            # print(area, "mm")
             volume += area * self.pix_z
         volume2 = 0
-        print("------------")
+        # print("Frame number" + str(frame))
         for i in reversed(range(1, len(image_list))):
-            area = self.calculate_values2(image_list[i], frame, 2)
-            print(area, "mm")
+            # print(i, frame)
+            area = self.calculate_values2(image_list[i], frame, 3)
+            # print(area, "mm")
             volume2 += area * self.pix_z
-        print("------------")
-        print("Volumes:")
-        print(volume, "mm^3")
-        print(volume2, "mm^3")
-        print("average volume:")
+        # print("------------")
+        # print("Volumes:")
+        # print(volume, "mm^3")
+        # print(volume2, "mm^3")
+        # print("average volume:")
         avg_volume = (volume2 + volume) / 2
-        print(avg_volume, "mm^3")
-        print(avg_volume * 0.001, "ml")
+        # print(avg_volume, "mm^3")
+        # print(avg_volume * 0.001, "ml")
         return avg_volume * 0.001
+
+    def full_volume_and_ef_calculate(self, image_list):
+        image = nib.load(image_list[0])
+
+        nr_of_frames = image.header['dim'][3]
+        print('-----------')
+        volume_list = []
+        for frame in range(nr_of_frames):
+            volume_list.append(self.calculate_volume(image_list, frame))
+        return self.ejection_fraction(volume_list)
 
     def volume(self, image_list, nr_of_frames):
         volume_list = []
         for frame in range(0, nr_of_frames):
             volume_list.append(self.calculate_volume(image_list, frame))
         return volume_list
+
+    def ejection_fraction(self, volume_list):
+        ED = max(volume_list)
+        ES = min(volume_list)
+        print("ED", ED)
+        print("ES", ES)
+        EF = (ED - ES) / ED
+        percentage_ef = EF * 100
+        print(percentage_ef, "% Ejection Fraction")
+        return percentage_ef, ED, ES
