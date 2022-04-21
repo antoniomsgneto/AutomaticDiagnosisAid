@@ -42,9 +42,9 @@ def calculate_values(img, slice):
 class Measures:
     # pixdim_xyz = image.header["pixdim"][1:4]
     # pixel_area = pixdim_xyz[0] * pixdim_xyz[1]
-    pixel_area = 1
+    pixel_area = 0.7422 * 0.7422
     # pix_z = img_nifti.header["pixdim"][3]
-    pix_z = 10
+    pix_z = 8
 
     def calculate_values2(self, image, slice_number, pixel_value):
         image = nib.load(image)

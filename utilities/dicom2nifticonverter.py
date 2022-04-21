@@ -79,6 +79,11 @@ def convert_slice_folder_to_nifti(path_to_dicom_folder, path_to_result_folder):
     # Sort list
     file_list = os.listdir(path_to_dicom_folder)
     file_list.sort(key=lambda x: __get_trigger_time(path_to_dicom_folder + '/' + x))
+    first_file = file_list[0]
+    ds = dicom.read_file(path_to_dicom_folder + '/' + first_file)
+    print('Pixel Spacing:', ds[0x0028, 0x0030].value)
+    print('Slice Thickness:', ds[0x0018, 0x0050].value)
+
     for file in file_list:
         print("Processing" + file + "to Nifti")
         path_to_file = path_to_dicom_folder + '/' + file
@@ -87,8 +92,14 @@ def convert_slice_folder_to_nifti(path_to_dicom_folder, path_to_result_folder):
         height = len(ds.pixel_array[0])
         unstacked_list.append(ds.pixel_array)
     result = convert_list_of_pixel_array_to_nifti(unstacked_list, width, height)
+    result_header = result.header.copy()
+    pixdim = result_header['pixdim']
+    pixdim[1] = ds[0x0028, 0x0030].value[0]
+    pixdim[2] = ds[0x0028, 0x0030].value[1]
+    pixdim[3] = ds[0x0018, 0x0050].value
+    result_header['pixdim'] = pixdim
+    result = result.__class__(result.get_fdata(), result.affine,result_header)
     nib.save(result, path_to_result_folder)
-
 
 def convert_list_of_pixel_array_to_nifti(list_of_arrays, width, height) -> Nifti1Image:
     nr_of_slices = len(list_of_arrays)
