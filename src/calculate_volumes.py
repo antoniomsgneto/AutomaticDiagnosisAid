@@ -18,9 +18,11 @@ if __name__ == '__main__':
             print(patient)
             print("--------------------------------------------")
             ef, ed, es = measure.full_volume_and_ef_calculate(patient_dict[patient])
+            es2, ed2 = measure.outer_volume(patient_dict[patient])
             if sys.argv[2]:
                 file = open(sys.argv[2], "a")
                 file.writelines(f'{patient} : Ejection Fraction = {ef} % End Diastolic Volume = {ed} ml' +
-                           f' End Sistolic Volume = {es} ml')
+                           f' End Sistolic Volume = {es} ml \n End Diastolic Outer Volume = {ed2} ' +
+                           f'\n End Sistolic Outer Volume = {es2}')
                 file.writelines('\n')
                 file.close()

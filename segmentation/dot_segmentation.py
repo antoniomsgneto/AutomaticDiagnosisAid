@@ -15,8 +15,7 @@ from matplotlib.lines import Line2D
 from shapely.geometry import LineString, LinearRing, Point
 
 
-def snake_segmentation_with_dots(path_to_original,path_to_file, patient_str, frame, snake_directory):
-
+def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, frame, snake_directory):
     nifti_image_pred = path_to_file
     print(nifti_image_pred)
 
@@ -113,13 +112,13 @@ def snake_segmentation_with_dots(path_to_original,path_to_file, patient_str, fra
             res_list.append({'point': (xn2[i], yn2[i]), 'm': m, 'b': b})
             # intersect=lin.intersection(contour)
             # distance = intersect.distance(Point(xn[i],yn[i]))*pixel_area
-            #ax.plot(line, '-', color=color)
+            # ax.plot(line, '-', color=color)
             ax.plot(intersect.x, intersect.y, 'o', color=color)
             ax.plot(xn2[i], yn2[i], 'o', color=color)
             count += 1
 
-    custom_lines = [Line2D([0], [0], label=str(round(value,2))+ "mm",
-                           color=color, lw=4) for num,color,value in res]
+    custom_lines = [Line2D([0], [0], label=str(round(value, 2)) + "mm",
+                           color=color, lw=4) for num, color, value in res]
     ax.legend(handles=custom_lines)
 
     fig_name = snake_directory + '/' + str(patient_str) + str(frame) + '.png'
@@ -132,20 +131,39 @@ def segment_patient(path_to_original, path_to_file, path_to_output_folder):
     fig_list = []
     patient_str = path_to_file.split('.')[0].split('/')[-1]
     distances = []
-    for i in range(30):
+    for i in range(40):
         try:
-            fig_name, res = snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, i, path_to_output_folder)
+            fig_name, res = snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, i,
+                                                         path_to_output_folder)
             distances = distances + res
             fig_list.append(fig_name)
         except Exception as e:
             print(e)
     save_gif_2d(path_to_output_folder + '/' + patient_str, fig_list)
-    for file in os.listdir(path_to_output_folder):
-        if file.endswith('.png'):
-            os.remove(file)
+    export_graph(distances, path_to_output_folder, patient_str)
+    for file in fig_list:
+        os.remove(file)
+
 
 def save_gif_2d(patient_str, fig_list):
     with imageio.get_writer(patient_str + '.gif', mode='I') as writer:
         for fig_name in fig_list:
             image = imageio.imread(fig_name)
             writer.append_data(image)
+
+
+def export_graph(res, snake_directory, patient_str):
+    graph = plt.figure(figsize=(10, 10))
+    ax = graph.add_subplot(111)
+    res_dict = {}
+    for item in res:
+        try:
+            res_dict[(item[0], item[1])].append(item[2])
+        except KeyError:
+            res_dict[(item[0], item[1])] = [item[2]]
+    plt.gray()
+    for key in res_dict.keys():
+        x_axis = list(range(0, len(res_dict[key])))
+        ax.plot(x_axis, res_dict[key], '-', color=key[1])
+    fig_name = snake_directory + '/' + str(patient_str) + 'graph.png'
+    graph.savefig(fig_name)

@@ -53,18 +53,18 @@ class Measures:
         np_counter = np.count_nonzero(np_pixdata[(np_pixdata == pixel_value)]) * self.pixel_area
         return np_counter
 
-    def calculate_volume(self, image_list, frame):
+    def calculate_volume(self, image_list, frame, level=3):
         volume = 0
         for i in range(len(image_list)):
             # print(i, frame)
-            area = self.calculate_values2(image_list[i], frame, 3)
+            area = self.calculate_values2(image_list[i], frame, level)
             # print(area, "mm")
             volume += area * self.pix_z
         volume2 = 0
         # print("Frame number" + str(frame))
         for i in reversed(range(1, len(image_list))):
             # print(i, frame)
-            area = self.calculate_values2(image_list[i], frame, 3)
+            area = self.calculate_values2(image_list[i], frame, level)
             # print(area, "mm")
             volume2 += area * self.pix_z
         # print("------------")
@@ -84,7 +84,8 @@ class Measures:
         print('-----------')
         volume_list = []
         for frame in range(nr_of_frames):
-            volume_list.append(self.calculate_volume(image_list, frame))
+            volume_list.append(self.calculate_volume(image_list, frame,3))
+
         return self.ejection_fraction(volume_list)
 
     def volume(self, image_list, nr_of_frames):
@@ -102,3 +103,13 @@ class Measures:
         percentage_ef = EF * 100
         print(percentage_ef, "% Ejection Fraction")
         return percentage_ef, ED, ES
+
+    def outer_volume(self,image_list):
+        image = nib.load(image_list[0])
+
+        nr_of_frames = image.header['dim'][3]
+        print('-----------')
+        volume_list = []
+        for frame in range(nr_of_frames):
+            volume_list.append(self.calculate_volume(image_list, frame, 2))
+        return min(volume_list),max(volume_list)
