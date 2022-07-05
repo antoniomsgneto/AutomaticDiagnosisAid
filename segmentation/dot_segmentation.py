@@ -13,7 +13,7 @@ from sympy.geometry import Line
 from sympy import Point as P
 from matplotlib.lines import Line2D
 from shapely.geometry import LineString, LinearRing, Point
-
+from scipy.spatial import distance as spatial_distance
 
 def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, frame, snake_directory):
     nifti_image_pred = path_to_file
@@ -104,8 +104,10 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
             print("---------------------------------------")
             print(intersect)
             print(distance)
-            res.append((i, color_cycle[count], distance))
+            center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
+            res.append((i, color_cycle[count], distance, center_distance))
             print(res)
+            print("CENTER DISTANCE:" + str(center_distance))
             x = np.linspace(90, 140)
             # ax.plot(l,'-',color=color)
             y = ((m * x) + b)
@@ -118,9 +120,13 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
             count += 1
 
     custom_lines = [Line2D([0], [0], label=str(round(value, 2)) + "mm",
-                           color=color, lw=4) for num, color, value in res]
-    ax.legend(handles=custom_lines)
-
+                           color=color, lw=4) for num, color, value, _ in res]
+    custom_center_lines = [Line2D([0], [0], label=str(round(value, 2)) + "mm",
+                           color=color, lw=4) for num, color, _, value in res]
+    legend1 = plt.legend(title='Thickness', handles=custom_lines, loc='upper right')
+    legend2 = plt.legend(title='Center Distance', handles=custom_center_lines, loc='upper left')
+    ax.add_artist(legend1)
+    ax.add_artist(legend2)
     fig_name = snake_directory + '/' + str(patient_str) + str(frame) + '.png'
     fig.savefig(fig_name)
     print("SAVED FIG" + fig_name)
@@ -167,3 +173,5 @@ def export_graph(res, snake_directory, patient_str):
         ax.plot(x_axis, res_dict[key], '-', color=key[1])
     fig_name = snake_directory + '/' + str(patient_str) + 'graph.png'
     graph.savefig(fig_name)
+
+

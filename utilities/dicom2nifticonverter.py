@@ -127,7 +127,7 @@ def __make_folder(folder):
 def main():
     if sys.argv[0]:
         for count, dir in enumerate(os.listdir(sys.argv[1])):
-            patient_identification = '/Patient10' + str(count) + '_'
+            patient_identification = dir
             full_convert(sys.argv[1] + '/' + dir, sys.argv[2], sys.argv[3], patient_identification)
 
 
