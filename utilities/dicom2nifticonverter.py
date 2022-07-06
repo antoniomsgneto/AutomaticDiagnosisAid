@@ -9,7 +9,7 @@ import os
 import gzip
 import shutil
 
-SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401', '/sacine401','2CHCine401',]
+SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401', '/sacine401','2CHCine401','/saCine401']
 
 
 def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_folder, patient_identification):

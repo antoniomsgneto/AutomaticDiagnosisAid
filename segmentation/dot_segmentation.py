@@ -1,5 +1,6 @@
 import os
 
+import itertools
 import imageio
 import nibabel as nib
 import matplotlib.pyplot as plt
@@ -61,18 +62,9 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     ax.plot(center_of_mass[1], center_of_mass[0], "or")
     ax.axis([0, img.shape[1], img.shape[0], 0])
 
-    color_cycle = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
+    color_cycle = itertools.cycle(["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
                    "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-                   "#ffffff", "#000000",
-                   "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
-                   "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-                   "#ffffff", "#000000",
-                   "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
-                   "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-                   "#ffffff", "#000000",
-                   "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
-                   "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-                   "#ffffff", "#000000"]
+                   "#ffffff", "#000000"])
     res = []
     count = 0
     res_list = []
@@ -83,8 +75,8 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
 
     contour = LinearRing([(xn[j], yn[j]) for j in range(len(xn))])
     for i in range(len(xn2)):
-        if i % 50 == 0:
-            color = color_cycle[count]
+        if i % 5 == 0:
+            color = next(color_cycle)
             l = Line(P(xn2[i - 1], yn2[i - 1], evaluate=False), P(xn2[i + 1], yn2[i + 1], evaluate=False))
             lin = l.perpendicular_line(P(xn2[i], yn2[i]))
             l = lin.coefficients
@@ -105,7 +97,7 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
             print(intersect)
             print(distance)
             center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
-            res.append((i, color_cycle[count], distance, center_distance))
+            res.append((i, color, distance, center_distance))
             print(res)
             print("CENTER DISTANCE:" + str(center_distance))
             x = np.linspace(90, 140)
