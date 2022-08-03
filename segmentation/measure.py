@@ -55,6 +55,10 @@ class Measures:
 
     def calculate_volume(self, image_list, frame, level=3):
         volume = 0
+        #o ciclo vai buscar a mesma frame em cada slice para obter a mesma altura do batimento cardiaco em todas as slices e assim calcular o volume.
+        #Daí percorrer a lista de slices. Porque uma slice tem um pedaço do coração. temos de ir buscar todos os pedaços do coração(slices) na mesma 
+        #altura do batimento cardiaco(slices)
+
         for i in range(len(image_list)):
             # print(i, frame)
             area = self.calculate_values2(image_list[i], frame, level)
@@ -82,7 +86,9 @@ class Measures:
 
         nr_of_frames = image.header['dim'][3]
         print('-----------')
+
         volume_list = []
+        #o ciclo vai obter o volume para cada frame( altura do batimento cardiaco) para obter o volume em todos os momentos do batimento cardiaco
         for frame in range(nr_of_frames):
             volume_list.append(self.calculate_volume(image_list, frame,3))
 
@@ -102,6 +108,7 @@ class Measures:
         EF = (ED - ES) / ED
         percentage_ef = EF * 100
         print(percentage_ef, "% Ejection Fraction")
+        
         return percentage_ef, ED, ES
 
     def outer_volume(self,image_list):
