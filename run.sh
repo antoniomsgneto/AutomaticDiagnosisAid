@@ -15,11 +15,11 @@ echo "here"
 
 #nnUNet_predict -i /home/amsgn/Dados/Nifti -o /home/amsgn/OUTPUT_DIRECTORY_3D -t 27 -m 2d --save #Comando para executar segmentação com nnUnet 
 
-#python3 -m src.apply_snakes /home/joao/Desktop/code_tese/Gota2/Gota2/teste/ /home/joao/Desktop/code_tese/Dados/  /home/joao/Desktop/code_tese/results/ #Comando para aplicar snakes com pontos (1 - Pasta com nifti segmentadas) (2-Pasta com Nifti originais) (3-Pasta para guardar resultados)
+python3 -m src.apply_snakes /home/joao/Desktop/code_tese/Gota2/Gota2/teste/ /home/joao/Desktop/code_tese/Dados/  /home/joao/Desktop/code_tese/results/ #Comando para aplicar snakes com pontos (1 - Pasta com nifti segmentadas) (2-Pasta com Nifti originais) (3-Pasta para guardar resultados)
 
-#python3 -m src.calculate_volumes /home/joao/Desktop/code_tese/Gota2/Gota2/teste/ /home/joao/Desktop/code_tese/result_report.txt #Comando calcular volumes (1-Pasta nifti segmentadas) (2 - Txt resultados)
+python3 -m src.calculate_volumes /home/joao/Desktop/code_tese/Gota2/Gota2/teste/ /home/joao/Desktop/code_tese/result_report.txt #Comando calcular volumes (1-Pasta nifti segmentadas) (2 - Txt resultados)
 
-python3 -m src.pickle_example /home/joao/Desktop/code_tese/AutomaticDiagnosisAid/save_data.p
+#python3 -m src.pickle_example /home/joao/Desktop/code_tese/AutomaticDiagnosisAid/save_data.p
 
 #deactivate
 
