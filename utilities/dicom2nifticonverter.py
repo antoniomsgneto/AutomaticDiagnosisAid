@@ -9,7 +9,7 @@ import os
 import gzip
 import shutil
 
-SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401', '/sacine401','2CHCine401',]
+SHORT_AXIS_FOLDER_NAME = ['/SACine401/', '/SAcine401/', '/sacine401/','2CHCine401/','/saCine401/']
 
 
 def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_folder, patient_identification):
@@ -18,7 +18,6 @@ def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_fold
     # Get main folder and divide images between Cuts and inside Cuts between Slices
     convert_to_folders(path_to_dicom_folder, path_to_result_folder)
     folder = max(SHORT_AXIS_FOLDER_NAME, key=lambda f: count_directory_size(path_to_result_folder + f))
-
     path_to_short_axis = path_to_result_folder + folder
     count = 0
 
@@ -30,7 +29,7 @@ def full_convert(path_to_dicom_folder, path_to_result_folder, path_to_nifti_fold
             print("Converting slice: " + folder)
             # Get all files from slice folder convert to numpy array and from that to nifti
             convert_slice_folder_to_nifti(path_to_short_axis + '/' + folder,
-                                          path_to_nifti_folder + patient_identification + str(count) + '_0000')
+                                          path_to_nifti_folder + '/' + patient_identification + '_' + str(count) + '_0000')
             count += 1
     gzip_files(path_to_nifti_folder)
     shutil.rmtree(path_to_result_folder)
@@ -42,7 +41,7 @@ def count_directory_size(dir_path: str) -> int:
     if os.path.exists(dir_path):
         for path in os.listdir(dir_path):
             # check if current path is a file
-            if os.path.isfile(os.path.join(dir_path, path)):
+            if os.path.isdir(os.path.join(dir_path, path)):
                 count += 1
     return count
 
@@ -127,7 +126,7 @@ def __make_folder(folder):
 def main():
     if sys.argv[0]:
         for count, dir in enumerate(os.listdir(sys.argv[1])):
-            patient_identification = '/Patient10' + str(count) + '_'
+            patient_identification = dir
             full_convert(sys.argv[1] + '/' + dir, sys.argv[2], sys.argv[3], patient_identification)
 
 
