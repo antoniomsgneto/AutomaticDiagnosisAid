@@ -14,7 +14,7 @@ from sympy import Point as P
 from matplotlib.lines import Line2D
 from shapely.geometry import LineString, LinearRing, Point
 
-
+#cada nifti é enviada para esta função para serem colocados 
 def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, frame, snake_directory):
     nifti_image_pred = path_to_file
     print(nifti_image_pred)
@@ -140,9 +140,12 @@ def segment_patient(path_to_original, path_to_file, path_to_output_folder):
         except Exception as e:
             print(e)
     save_gif_2d(path_to_output_folder + '/' + patient_str, fig_list)
-    export_graph(distances, path_to_output_folder, patient_str)
+    #EXPORTAR OU DAR RETURN E FAZER SCRIPT PARA ORGANIZAR EM FICHEIRO. PARA TER PELAS SLICES
+    distances_by_point = export_graph(distances, path_to_output_folder, patient_str)
+    distances_by_frame = distances
     for file in fig_list:
         os.remove(file)
+    return distances
 
 
 def save_gif_2d(patient_str, fig_list):
@@ -153,6 +156,9 @@ def save_gif_2d(patient_str, fig_list):
 
 
 def export_graph(res, snake_directory, patient_str):
+    #ADICIONADO PELO JOÃO
+    print("DISTANCES: \n")
+    print(res)
     graph = plt.figure(figsize=(10, 10))
     ax = graph.add_subplot(111)
     res_dict = {}
@@ -167,3 +173,4 @@ def export_graph(res, snake_directory, patient_str):
         ax.plot(x_axis, res_dict[key], '-', color=key[1])
     fig_name = snake_directory + '/' + str(patient_str) + 'graph.png'
     graph.savefig(fig_name)
+    return res_dict
