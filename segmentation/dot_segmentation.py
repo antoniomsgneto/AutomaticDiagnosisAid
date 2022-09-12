@@ -15,11 +15,19 @@ from sympy import Point as P
 from matplotlib.lines import Line2D
 from shapely.geometry import LineString, LinearRing, Point
 from scipy.spatial import distance as spatial_distance
+import seaborn as sns
+
 
 #cada nifti é enviada para esta função para serem colocados 
 
 
-def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, frame, snake_directory):
+def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, frame, snake_directory, colors):
+    
+    #adicionado pelo João
+    ready_for_cluster = []
+    intersections = []
+    
+    
     nifti_image_pred = path_to_file
     print(nifti_image_pred)
 
@@ -35,6 +43,7 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     except:
         background = img
 
+    
     fig = plt.figure(figsize=(9, 9))
     ax = fig.add_subplot(111)
     plt.gray()
@@ -64,10 +73,12 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     ax.plot(snake2[:, 1], snake2[:, 0], '-b', lw=3)
     ax.plot(center_of_mass[1], center_of_mass[0], "or")
     ax.axis([0, img.shape[1], img.shape[0], 0])
+    ready_for_cluster.append(background)
+    ready_for_cluster.append(snake)
 
-    color_cycle = itertools.cycle(["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
-                   "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-                   "#ffffff", "#000000"])
+
+    
+    color_cycle = itertools.cycle(colors)
     res = []
     count = 0
     res_list = []
@@ -110,10 +121,11 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
             # intersect=lin.intersection(contour)
             # distance = intersect.distance(Point(xn[i],yn[i]))*pixel_area
             # ax.plot(line, '-', color=color)
+            intersections.append(intersect)
             ax.plot(intersect.x, intersect.y, 'o', color=color)
             ax.plot(xn2[i], yn2[i], 'o', color=color)
             count += 1
-
+    ready_for_cluster.append(intersections)
     custom_lines = [Line2D([0], [0], label=str(round(value, 2)) + "mm",
                            color=color, lw=4) for num, color, value, _ in res]
     custom_center_lines = [Line2D([0], [0], label=str(round(value, 2)) + "mm",
@@ -125,18 +137,30 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     fig_name = snake_directory + '/' + str(patient_str) + str(frame) + '.png'
     fig.savefig(fig_name)
     print("SAVED FIG" + fig_name)
-    return fig_name, res
+
+    #adicionado João
+    fig_name2 = snake_directory + '/' + str(patient_str) + str(frame) + 'CLUSTER.png'
+    ready_for_cluster.append(fig_name2)
+
+    return fig_name, res, ready_for_cluster
 
 
-def segment_patient(path_to_original, path_to_file, path_to_output_folder):
+def segment_patient(path_to_original, path_to_file, path_to_output_folder, colors):
     fig_list = []
+    fig_list_cluster = []
+    all_cluster_info = []
     patient_str = path_to_file.split('.')[0].split('/')[-1]
     distances = []
     for i in range(40):
         try:
-            fig_name, res = snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, i,
-                                                         path_to_output_folder)
+            fig_name, res, cluster_info = snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, i,
+                                                         path_to_output_folder, colors)
             distances = distances + res
+            
+            #adicionado João
+            fig_list_cluster.append(cluster_info[3])
+            all_cluster_info.append(cluster_info)
+            
             fig_list.append(fig_name)
         except Exception as e:
             print(e)
@@ -146,7 +170,7 @@ def segment_patient(path_to_original, path_to_file, path_to_output_folder):
     distances_by_frame = distances
     for file in fig_list:
         os.remove(file)
-    return distances
+    return distances, all_cluster_info, fig_list_cluster
 
 
 def save_gif_2d(patient_str, fig_list):
@@ -175,3 +199,35 @@ def export_graph(res, snake_directory, patient_str):
     fig_name = snake_directory + '/' + str(patient_str) + 'graph.png'
     graph.savefig(fig_name)
     return res_dict
+
+
+
+
+def plot_graphs(cluster_info):
+    print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+
+    fig = plt.figure(figsize=(9, 9))
+    ax = fig.add_subplot(111)
+    plt.gray()
+
+    ax.imshow(cluster_info[0])
+    
+    snake = cluster_info[1]
+    
+    xn2 = snake[:, 1]
+    yn2 = snake[:, 0]
+    colors = itertools.cycle(get_pallete(100))
+
+    for i in range(len(xn2)):
+        
+        if i % 5 == 0:
+                
+            color = next(colors)
+            
+            ax.plot(cluster_info[2][int(i/5)].x, cluster_info[2][int(i/5)].y, 'o', color=color)
+            ax.plot(xn2[i], yn2[i], 'o', color=color)
+    fig.savefig(cluster_info[3])
+
+def get_pallete(n):
+  return sns.color_palette('magma', n).as_hex()
+
