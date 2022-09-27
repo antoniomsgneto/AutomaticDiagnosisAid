@@ -32,7 +32,7 @@ def plot_points(bla):
     plt.gray()
     x_axis = list(range(0, len(bla)))
     ax.plot(x_axis, list(lista_pontos), '-', color='#ff7f0e')
-    graph.savefig('/home/joao/Desktop/code_tese/AutomaticDiagnosisAid/bla.png')
+    #graph.savefig('/home/joao/Desktop/code_tese/AutomaticDiagnosisAid/bla.png')
 
 if __name__ == '__main__':
     if sys.argv[1]:

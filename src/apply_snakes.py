@@ -67,12 +67,14 @@ if __name__ == '__main__':
                 cluster_colors = get_pallete(6)
                 plot_graphs(all_cluster_info, predicted_clusters, cluster_colors, fig_list_cluster, sys.argv[1] + file, sys.argv[3])
 
-
+                """
                 try:
                     data_dict[counter].append(data_by_frame)
                 except KeyError:
                     data_dict[counter] = data_by_frame
                 counter+=1
-            
-        pickle5.dump( data_dict, open( "save_data.p", "wb" ) )
+                """
+                pickle_file_path = sys.argv[4] + file.split(".")[0] + ".pkl"
+                print(pickle_file_path + " IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+                pickle5.dump( data_by_frame, open( pickle_file_path, "wb" ) )
 
