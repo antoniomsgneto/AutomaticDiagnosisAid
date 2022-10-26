@@ -250,10 +250,12 @@ def main(path_gt, path_pred):
             "The paths given needs to be two directories or two files.")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Script to compute ACDC challenge metrics.")
-    parser.add_argument("GT_IMG", type=str, help="Ground Truth image")
-    parser.add_argument("PRED_IMG", type=str, help="Predicted image")
-    args = parser.parse_args()
-    main(args.GT_IMG, args.PRED_IMG)
+#if __name__ == "__main__":
+#    parser = argparse.ArgumentParser(
+#        description="Script to compute ACDC challenge metrics.")
+#    parser.add_argument("GT_IMG", type=str, help="Ground Truth image")
+#    parser.add_argument("PRED_IMG", type=str, help="Predicted image")
+#    args = parser.parse_args()
+#    main(args.GT_IMG, args.PRED_IMG)
+
+compute_metrics_on_files('/Users/antonioneto/Antonio/tese/Dados/SnakesResult/Patient_0_1.nii','/Users/antonioneto/Antonio/tese/Dados/test/Patient_0_1.nii')

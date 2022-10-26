@@ -1,7 +1,5 @@
 from os import listdir
 from segmentation.segmentation_with_sampling import segment_patient
-#from segmentation.simple_segmentation import segment_patient
-#from segmentation.dot_segmentation import segment_patient
 import sys
 
 if __name__ == '__main__':
@@ -10,3 +8,5 @@ if __name__ == '__main__':
             if file.endswith('nii.gz'):
                 print("here")
                 segment_patient(sys.argv[1], sys.argv[2])
+
+segment_patient('/Users/antonioneto/Antonio/tese/Dados/test/Patient_0_1.nii.gz','/Users/antonioneto/Antonio/tese/Dados/SnakesResult')

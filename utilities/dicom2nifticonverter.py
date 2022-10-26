@@ -122,12 +122,9 @@ def __make_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-def save_array_list_to_nifti(list_of_arrays, width, height,path_to_result_folder):
+def save_array_list_to_nifti(list_of_arrays, width, height,path_to_result_folder, header):
     result = convert_list_of_pixel_array_to_nifti(list_of_arrays, width, height)
-    result_header = result.header.copy()
-    pixdim = result_header['pixdim']
-    result_header['pixdim'] = pixdim
-    result = result.__class__(result.get_fdata(), result.affine, result_header)
+    result = result.__class__(result.get_fdata(), result.affine, header)
     nib.save(result, path_to_result_folder)
 def main():
     if sys.argv[0]:
