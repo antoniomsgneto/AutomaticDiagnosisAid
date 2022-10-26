@@ -9,7 +9,7 @@ from skimage.draw import polygon, polygon_perimeter
 
 from utilities.dicom2nifticonverter import save_array_list_to_nifti
 
-def open_nifti_image(path_to_file,frame):
+def open_nifti_image(path_to_file):
     nifti_image_pred = path_to_file
     return nib.load(nifti_image_pred)
 
