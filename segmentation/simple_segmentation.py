@@ -68,6 +68,3 @@ def segment_patient(path_to_file, path_to_output_folder):
             print(e)
     #print(fig_list[0].shape)
     save_array_list_to_nifti(fig_list,fig_list[0].shape[0],fig_list[0].shape[1],path_to_output_folder+'/'+patient_str, header)
-
-
-segment_patient('/Users/antonioneto/Antonio/tese/Dados/test/Patient_0_1.nii.gz','/Users/antonioneto/Antonio/tese/Dados/SnakesResult')
