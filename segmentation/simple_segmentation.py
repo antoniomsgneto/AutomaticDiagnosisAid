@@ -59,7 +59,8 @@ def segment_patient(path_to_file, path_to_output_folder):
     patient_str = path_to_file.split('.')[0].split('/')[-1]
     image = nib.load(path_to_file)
     header = image.header
-    for i in range(30):
+    print(header['dim'][3])
+    for i in range(header['dim'][3]):
         try:
             print("Frame:" + str(i))
             snake = snake_segmentation_without_dots(image, i)

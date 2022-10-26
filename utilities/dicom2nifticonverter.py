@@ -123,6 +123,7 @@ def __make_folder(folder):
         os.makedirs(folder)
 
 def save_array_list_to_nifti(list_of_arrays, width, height,path_to_result_folder, header):
+    print("Saving nifti")
     result = convert_list_of_pixel_array_to_nifti(list_of_arrays, width, height)
     result = result.__class__(result.get_fdata(), result.affine, header)
     nib.save(result, path_to_result_folder)

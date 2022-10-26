@@ -61,7 +61,7 @@ def snake_segmentation_without_dots(path_to_file, patient_str, frame, snake_dire
 def segment_patient(path_to_file, path_to_output_folder):
     fig_list = []
     patient_str = path_to_file.split('.')[0].split('/')[-1]
-    for i in range(30):
+    for i in range(10):
         try:
             snake = snake_segmentation_without_dots(path_to_file, patient_str, i, path_to_output_folder)
             fig_list.append(snake)

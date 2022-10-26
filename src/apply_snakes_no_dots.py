@@ -1,5 +1,5 @@
 from os import listdir
-from segmentation.segmentation_with_sampling import segment_patient
+from segmentation.simple_segmentation import segment_patient
 import sys
 
 if __name__ == '__main__':
