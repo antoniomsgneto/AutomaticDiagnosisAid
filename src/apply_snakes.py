@@ -3,7 +3,7 @@ from os import listdir
 from segmentation.dot_segmentation import segment_patient
 from segmentation.dot_segmentation import save_gif_2d
 import sys
-import pickle5 
+import pickle as pickle5
 from random import randint
 from segmentation.clustering import data_to_cluster
 import seaborn as sns
@@ -52,17 +52,19 @@ def plot_graphs(all_cluster_info, predicted_clusters, colors, fig_list_cluster, 
 
 
 if __name__ == '__main__':
-    if sys.argv[1]:
+    path_folder_1 = '/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/'
+    path_folder_2 ='/Users/antonioneto/Antonio/tese/Dados/GotaResults'
+    if path_folder_1:
         counter = 0
         data_dict={}
         colors = []
         for i in range(100):
             colors.append('#%06X' % randint(0, 0xFFFFFF))
         print(len(colors))
-        for file in listdir(sys.argv[1]):
+        for file in listdir(path_folder_1):
             if file.endswith('nii.gz'):
                 print("here")
-                data_by_frame, all_cluster_info, fig_list_cluster= segment_patient(sys.argv[2] + file.replace('.nii.gz','_0000.nii.gz'), sys.argv[1] + file, sys.argv[3], colors)
+                data_by_frame, all_cluster_info, fig_list_cluster = segment_patient(path_folder_1 + file.replace('.nii.gz','_0000.nii.gz'), path_folder_1 + file, path_folder_2, colors)
                 predicted_clusters = data_to_cluster(data_by_frame, 100,6,400,15)
                 cluster_colors = get_pallete(6)
                 plot_graphs(all_cluster_info, predicted_clusters, cluster_colors, fig_list_cluster, sys.argv[1] + file, sys.argv[3])

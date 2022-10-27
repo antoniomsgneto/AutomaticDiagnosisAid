@@ -49,26 +49,29 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     plt.gray()
     ax.imshow(background)
     np_pixdata = np.array(img)
+
+    an_array = np.where(np_pixdata != 3, 0, np_pixdata)
+    center_of_mass = ndimage.measurements.center_of_mass(an_array)
+
     # np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 2)])
     an_array = np.where(np_pixdata != 2, 0, np_pixdata)
     img = rgb2gray(an_array)
 
     s = np.linspace(0, 2 * np.pi, 500)
-    r = 250 + 100 * np.sin(s)
-    c = 280 + 100 * np.cos(s)
+    r = center_of_mass[0] + 30 * np.sin(s)
+    c = center_of_mass[1] + 30 * np.cos(s)
     init = np.array([r, c]).T
     snake = active_contour(gaussian(img, 3),
                            init, boundary_condition="periodic",
-                           alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
+                           alpha=0.1, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=10000)
 
     # np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 3)])
     an_array = np.where(np_pixdata != 3, 0, np_pixdata)
-    center_of_mass = ndimage.measurements.center_of_mass(an_array)
 
     img = rgb2gray(an_array)
     snake2 = active_contour(gaussian(img, 3),
                             init, boundary_condition="periodic",
-                            alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
+                            alpha=0.1, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
     ax.plot(snake[:, 1], snake[:, 0], '-r', lw=3)
     ax.plot(snake2[:, 1], snake2[:, 0], '-b', lw=3)
     ax.plot(center_of_mass[1], center_of_mass[0], "or")
@@ -151,7 +154,7 @@ def segment_patient(path_to_original, path_to_file, path_to_output_folder, color
     all_cluster_info = []
     patient_str = path_to_file.split('.')[0].split('/')[-1]
     distances = []
-    for i in range(40):
+    for i in range(7,20):
         try:
             fig_name, res, cluster_info = snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, i,
                                                          path_to_output_folder, colors)
