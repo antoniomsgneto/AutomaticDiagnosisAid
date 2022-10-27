@@ -35,7 +35,7 @@ def snake_segmentation_without_dots(image,frame):
     init = np.array([r, c]).T
     snake = active_contour(gaussian(img, 3),
                            init, boundary_condition="periodic",
-                           alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
+                           alpha=0.1, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
 
     #np_counter = np.count_nonzero(np_pixdata[(np_pixdata == 3)])
     an_array = np.where(np_pixdata != 3, 0, np_pixdata)
@@ -43,7 +43,7 @@ def snake_segmentation_without_dots(image,frame):
     img = rgb2gray(an_array)
     snake2 = active_contour(gaussian(img, 3),
                             init, boundary_condition="periodic",
-                            alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
+                            alpha=0.1, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
     snake_array = np.zeros([img_shape[0]*100, img_shape[1]*100])
     print(snake)
     points_r, points_c = list(map(lambda x: round(x*100), snake[:, 0])), list(map(lambda x: round(x*100), snake[:, 1]))
