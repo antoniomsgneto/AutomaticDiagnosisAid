@@ -158,7 +158,7 @@ def metrics(img_gt, img_pred, voxel_size):
         gt_c_i[gt_c_i != c] = 0
 
         # Copy the pred image to not alterate the input
-        pred_c_i = np.copy(img_pred)
+        pred_c_i = np.copy(img_pred).astype(int)
         pred_c_i[pred_c_i != c] = 0
 
         # Clip the value to compute the volumes
@@ -258,4 +258,33 @@ def main(path_gt, path_pred):
 #    args = parser.parse_args()
 #    main(args.GT_IMG, args.PRED_IMG)
 
-compute_metrics_on_files('/Users/antonioneto/Antonio/tese/Dados/SnakesResult/Patient_0_1.nii','/Users/antonioneto/Antonio/tese/Dados/test/Patient_0_1.nii')
+#compute_metrics_on_files('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii','/Users/antonioneto/Antonio/tese/Dados/SnakeResult/SnakeOutput/patient003_frame01.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt.nii','/Users/antonioneto/Antonio/Downloads/patient003_frame01_gt 2.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+
+"""
+img = nib.load('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+header = img.header
+img2 = nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 2.nii')
+fixed_image = img.__class__(img2.get_fdata().copy(), img.affine, header.copy())
+fixed_image.to_filename('/Users/antonioneto/Downloads/patient003_frame01_gt 4.nii')
+
+print(nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 4.nii').header)
+print(nib.load('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii').header)
+
+
+image=  nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 2.nii')
+header= image.header
+array=image.get_data()
+
+gt=  nib.load('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii')
+gt_header= image.header
+gt_array=image.get_data()
+
+print(header)
+print(gt_header)
+"""
+
+compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Downloads/patient003_frame01.nii')
+compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii')

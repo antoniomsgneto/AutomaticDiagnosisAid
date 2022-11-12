@@ -51,16 +51,16 @@ def snake_segmentation_without_dots(image,frame):
     print(points_c)
     interior_r, interior_c = polygon(points_r, points_c)
     perimeter_r, perimeter_c = polygon_perimeter(points_r, points_c)
-    snake_array[perimeter_r, perimeter_c] = 1
-    snake_array[points_r, points_c] = 1
-    snake_array[interior_r, interior_c] = 1
+    snake_array[perimeter_r, perimeter_c] = 2
+    snake_array[points_r, points_c] = 2
+    snake_array[interior_r, interior_c] = 2
     points_r, points_c = list(map(lambda x: round(x*100), snake2[:, 0])), list(
         map(lambda x: round(x*100), snake2[:, 1]))
     interior_r, interior_c = polygon(points_r, points_c)
     perimeter_r, perimeter_c = polygon_perimeter(points_r, points_c)
-    snake_array[perimeter_r, perimeter_c] = 2
-    snake_array[points_r, points_c] = 2
-    snake_array[interior_r, interior_c] = 2
+    snake_array[perimeter_r, perimeter_c] = 3
+    snake_array[points_r, points_c] = 3
+    snake_array[interior_r, interior_c] = 3
     return snake_array[::100, ::100]
 
 def segment_patient(path_to_file, path_to_output_folder):
@@ -68,6 +68,7 @@ def segment_patient(path_to_file, path_to_output_folder):
     patient_str = path_to_file.split('.')[0].split('/')[-1]
     image = nib.load(path_to_file)
     header = image.header
+    affine = image.affine
     print(header['dim'][3])
     for i in range(header['dim'][3]):
         try:
@@ -77,4 +78,6 @@ def segment_patient(path_to_file, path_to_output_folder):
         except Exception as e:
             print(e)
     #print(fig_list[0].shape)
-    save_array_list_to_nifti(fig_list,fig_list[0].shape[0],fig_list[0].shape[1],path_to_output_folder+'/'+patient_str, header)
+    save_array_list_to_nifti(fig_list,fig_list[0].shape[0],fig_list[0].shape[1],path_to_output_folder+'/'+patient_str,affine ,header.copy())
+
+segment_patient('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii','/Users/antonioneto/Downloads')
