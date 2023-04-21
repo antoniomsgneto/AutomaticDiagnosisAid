@@ -192,7 +192,7 @@ def run():
     # y_train = np.array(train_data)[:, -1]
     # nb.fit(X_train, y_train)
 
-a = "print Tests"
+
 run()
 
 
