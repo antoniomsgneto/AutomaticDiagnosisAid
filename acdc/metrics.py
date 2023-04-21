@@ -32,7 +32,7 @@ The second option wiil ouput a csv file where each images will have the dice and
 Link: http://acdc.creatis.insa-lyon.fr
 
 """
-
+import csv
 import os
 from glob import glob
 import time
@@ -202,7 +202,7 @@ def compute_metrics_on_files(path_gt, path_pred):
     formatting = "{:>14}, {:>7}, {:>9}, {:>10}, {:>7}, {:>9}, {:>10}, {:>8}, {:>10}, {:>11}"
     print(formatting.format(*HEADER))
     print(formatting.format(name, *res))
-
+    return res
 
 def compute_metrics_on_directories(dir_gt, dir_pred):
     """
@@ -259,3 +259,59 @@ def main(path_gt, path_pred):
 #    main(args.GT_IMG, args.PRED_IMG)
 
 compute_metrics_on_files('/Users/antonioneto/Antonio/tese/Dados/SnakesResult/Patient_0_1.nii','/Users/antonioneto/Antonio/tese/Dados/test/Patient_0_1.nii')
+#compute_metrics_on_files('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii','/Users/antonioneto/Antonio/tese/Dados/SnakeResult/SnakeOutput/patient003_frame01.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt.nii','/Users/antonioneto/Antonio/Downloads/patient003_frame01_gt 2.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+
+"""
+img = nib.load('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+header = img.header
+img2 = nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 2.nii')
+fixed_image = img.__class__(img2.get_fdata().copy(), img.affine, header.copy())
+fixed_image.to_filename('/Users/antonioneto/Downloads/patient003_frame01_gt 4.nii')
+
+print(nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 4.nii').header)
+print(nib.load('/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii').header)
+
+
+image=  nib.load('/Users/antonioneto/Downloads/patient003_frame01_gt 2.nii')
+header= image.header
+array=image.get_data()
+
+gt=  nib.load('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii')
+gt_header= image.header
+gt_array=image.get_data()
+
+print(header)
+print(gt_header)
+"""
+
+import warnings
+base_path ='/Users/antonioneto/Downloads/testing_output'
+file = open('/Users/antonioneto/Downloads/metrics_test.csv', 'w+', newline='')
+write = csv.writer(file)
+write.writerow(['patient_str','w_edge','w_line','max_iterations','nr_of_points','Dice LV', 'Volume LV', 'Err LV(ml)', 'Dice RV', 'Volume RV', 'Err RV(ml)', 'Dice MYO', 'Volume MYO', 'Err MYO(ml)'])
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii',
+                         #'/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    for folder in os.listdir(base_path):
+        print(folder)
+        for file in os.listdir(base_path+'/'+folder):
+            try:
+                patient_str = file[:-4]
+                res = compute_metrics_on_files(f'/Users/antonioneto/Downloads/testing2/{patient_str}_gt.nii',
+                                         base_path+'/'+folder+'/'+file)
+
+                write.writerow([patient_str] + folder.split('_')+res)
+            except ValueError:
+                print(f"Not able to compute {folder}")
+
+
+
+
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient004/patient004_frame01_gt.nii','/Users/antonioneto/Downloads/output/8.8_-0.5_250_500/patient004_frame01.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient004/patient004_frame01_gt.nii','/Users/antonioneto/Antonio/tese/Dados/ACDC_segmented/OUTPUT_ACDC/patient003_frame01.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Downloads/patient003_frame01.nii')
+#compute_metrics_on_files('/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii','/Users/antonioneto/Downloads/training/patient003/patient003_frame01_gt 2.nii')
