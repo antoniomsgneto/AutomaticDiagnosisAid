@@ -56,7 +56,7 @@ def snake_segmentation_with_dots(path_to_original, path_to_file, patient_str, fr
     img = rgb2gray(an_array)
     snake2 = active_contour(gaussian(img, 3),
                             init, boundary_condition="periodic",
-                            alpha=0.015, beta=10, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
+                            alpha=0.015, beta=1, gamma=0.001, w_line=-0.2, w_edge=4, max_iterations=5000)
     ax.plot(snake[:, 1], snake[:, 0], '-r', lw=3)
     ax.plot(snake2[:, 1], snake2[:, 0], '-b', lw=3)
     ax.plot(center_of_mass[1], center_of_mass[0], "or")
