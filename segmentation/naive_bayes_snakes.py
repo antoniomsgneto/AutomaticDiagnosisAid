@@ -30,9 +30,6 @@ def snake_segmentation_without_dots(
     s = np.linspace(0, 2 * np.pi, nr_of_points)
     r = center_of_mass[0] + 200 * np.sin(s)
     c = center_of_mass[1] + 200 * np.cos(s)
-    s = np.linspace(0, 2 * np.pi, nr_of_points)
-    r = center_of_mass[0] + 200 * np.sin(s)
-    c = center_of_mass[1] + 200 * np.cos(s)
     init = np.array([r, c]).T
     snake = active_contour(gaussian(img, 3),
                            init, boundary_condition="periodic",
@@ -63,7 +60,7 @@ def dice_score(arr1, arr2, segmentation_level: SegmentationLevel):
 def __load_file(path_to_file: str, frame):
     return np.array(nib.load(path_to_file).get_data()[:, :, frame])
 
-
+"""
 def run():
     path_to_file = '/Users/antonioneto/Downloads/OUTPUT_TESTING/patient150_frame12.nii'
     path_to_ground_truth = '/Users/antonioneto/Downloads/testing2/patient150_frame12_gt.nii'
@@ -86,3 +83,5 @@ def run():
 
 
 run()
+"""
+
