@@ -14,9 +14,14 @@ from sympy.geometry import Line
 from sympy import Point as P
 from matplotlib.lines import Line2D
 from shapely.geometry import LineString, LinearRing, Point
+from scipy.spatial import distance as spatial_distance
 
 from PIL import Image
 import io
+
+
+def calculate_thickening(max_thickness: float, min_thickness: float) -> float:
+    return (max_thickness - min_thickness) / max_thickness
 
 
 class SegmentationLevel(Enum):
@@ -74,6 +79,7 @@ def snake_segmentation_dots(
     multiple_frame_snakes = []
     multiple_frame_dots = []
     multiple_frame_distances = []
+    multiple_frame_center_distances = []
 
     image = nib.load(path_to_file)
     pixdim_xyz = image.header["pixdim"][1:4]
@@ -98,28 +104,62 @@ def snake_segmentation_dots(
             multiple_frame_dots.append(dots)
             distances = [d[2] for d in dots]  # Gets list of distances
             multiple_frame_distances.append(distances)
+            center_distances = [d[3] for d in dots]
+            multiple_frame_center_distances.append(center_distances)
         except Exception as e:
             print(e)
-    build_graphs(image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots)
+    print("Building Graphs")
+    build_graphs(
+        image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots, multiple_frame_center_distances
+    )
 
 
-def build_graphs(image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots):
+def build_graphs(
+    image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots, multiple_frame_center_distances
+):
     fig = plt.figure(figsize=(18, 9))
-    gs = fig.add_gridspec(2, 2, width_ratios=[2, 1], height_ratios=[2, 1])
-    ax = fig.add_subplot(gs[0:2, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, 1])
+    gs = fig.add_gridspec(2, 4, width_ratios=[2, 1, 1, 1], height_ratios=[2, 2])
+    ax = fig.add_subplot(gs[0:2, 0:2])
+    ax2 = fig.add_subplot(gs[0, 2])
+
+    ax3 = fig.add_subplot(gs[0, 3])
+    ax4 = fig.add_subplot(gs[1, 2])
+    ax5 = fig.add_subplot(gs[1, 3])
     ax3.set_xlim(0, 30)
+    ax5.set_xlim(0, 30)
+    ax3.set_ylim(0, 20)
+    ax5.set_ylim(10, 60)
+    ax3.set_title('distance')
+    ax5.set_title('center distance')
     custom_lines = []
+    custom_lines2 = []
     for index, val in enumerate(zip(*multiple_frame_distances)):
         dist = list(val)
         color = next(color_cycle)
         ax3.plot(dist, color)
         custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
                                    color=color, lw=4))
+        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist),min(dist))),
+                                    color=color, lw=4))
     fig.legend(title='Thickness', handles=custom_lines, loc='upper right')
+    fig.legend(title='Thickening', handles=custom_lines2, loc='lower right')
+    custom_lines = []
+    custom_lines2 = []
+    for index, val in enumerate(zip(*multiple_frame_center_distances)):
+        dist = list(val)
+        color = next(color_cycle)
+        ax5.plot(dist, color)
+        custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
+                                   color=color, lw=4))
+        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
+                                    color=color, lw=4))
+    fig.legend(title='Center Distance', handles=custom_lines, loc='upper left')
+    fig.legend(title='Thickening', handles=custom_lines2, loc='lower left')
     for frame in range(len(multiple_frame_snakes)):
         ax2.set_ylim(0, 20)
+        ax4.set_ylim(10, 60)
+        ax2.set_title('distance')
+        ax4.set_title('center distance')
         img = image.get_data()[:, :, frame]
         ax.imshow(img)
         # Print Raw Snakes
@@ -127,23 +167,23 @@ def build_graphs(image, multiple_frame_distances, multiple_frame_snakes, multipl
         for index in snakes:
             ax.plot(snakes[index][:, 1], snakes[index][:, 0], snake_colors[index], lw=3)
         dots = multiple_frame_dots[frame]
-        print("Building Graphs")
-
         # Print Dots
         count = 0
-
-        for d, do, distance in dots:
+        for d, do, distance, center_distance in dots:
             color = next(color_cycle)
             ax.plot(d[0], d[1], 'o', color=color)
             ax.plot(do[0], do[1], 'o', color=color)
 
             ax2.plot(count, distance, 'o', color=color)
+            ax4.plot(count, center_distance, 'o', color=color)
+
             count += 1
 
         fig.legend(title=f'{frame} Frame', loc='upper center')
         save_fig_to_list(fig)
         ax.clear()
         ax2.clear()
+        ax4.clear()
 
 
 def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel):
@@ -191,8 +231,8 @@ def add_dots(pixel_area, center_of_mass, snake_list):
                 distance = distance1
                 intersect = intersect[1]
             try:
-                # center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
-                res.append([(intersect.x, intersect.y), (xn2[i], yn2[i]), distance])
+                center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
+                res.append([(intersect.x, intersect.y), (xn2[i], yn2[i]), distance, center_distance])
             except Exception as e:
                 print(e)
     return res
@@ -208,9 +248,9 @@ def save_fig_to_list(fig):
 
 
 # snake_segmentation_dots('/Users/antva-onioneto/Downloads/OUTPUT_TESTING/patient150_frame12.nii')
-snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii')
+#snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii')
 # snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii')
-# snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii')
+snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii')
 imageio.mimsave('/Users/antonioneto/Downloads/animation.gif', fig_list)
 # show_gif_loop('/Users/antonioneto/Downloads/animation.gif')
 
