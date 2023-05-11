@@ -75,12 +75,14 @@ fig_list = []
 
 def snake_segmentation_dots(
     path_to_file,
-    path_to_origin
+    path_to_origin,
+    path_to_output
 ):
     multiple_frame_snakes = []
     multiple_frame_dots = []
     multiple_frame_distances = []
     multiple_frame_center_distances = []
+
 
     image = nib.load(path_to_file)
     try:
@@ -112,6 +114,7 @@ def snake_segmentation_dots(
             center_distances = [d[3] for d in dots]
             multiple_frame_center_distances.append(center_distances)
         except Exception as e:
+            fig_list.clear()
             print(e)
     print("Building Graphs")
     build_graphs(
@@ -119,6 +122,7 @@ def snake_segmentation_dots(
         multiple_frame_center_distances
     )
 
+    imageio.mimsave(path_to_output, fig_list)
 
 def build_graphs(
     image_origin, image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots,
@@ -133,15 +137,17 @@ def build_graphs(
     ax4 = fig.add_subplot(gs[1, 2])
     ax5 = fig.add_subplot(gs[1, 3])
     ax6 = ax2.twinx()
+    ax8 = ax4.twinx()
     ax3.set_xlim(0, 30)
     ax5.set_xlim(0, 30)
     ax3.set_ylim(0, 20)
     ax5.set_ylim(10, 60)
-    ax3.set_title('distance')
+    ax3.set_title('thickness')
     ax5.set_title('center distance')
     custom_lines = []
     custom_lines2 = []
     ziped_frame_distances = list(zip(*multiple_frame_distances))
+    ziped_center_distances = list(zip(*multiple_frame_center_distances))
     for index, val in enumerate(ziped_frame_distances):
         dist = list(val)
         color = next(color_cycle)
@@ -163,12 +169,13 @@ def build_graphs(
         custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
                                     color=color, lw=4))
     fig.legend(title='Center Distance', handles=custom_lines, loc='upper left')
-    fig.legend(title='Thickening', handles=custom_lines2, loc='lower left')
+    fig.legend(title='Distance Percentage', handles=custom_lines2, loc='lower left')
     for frame in range(len(multiple_frame_snakes)):
         ax2.set_ylim(0, 20)
         ax6.set_ylim(0, 1)
+        ax8.set_ylim(0, 1)
         ax4.set_ylim(10, 60)
-        ax2.set_title('distance')
+        ax2.set_title('thickness')
         ax4.set_title('center distance')
         if image_origin:
             img = image_origin.get_data()[:, :, frame]
@@ -188,9 +195,11 @@ def build_graphs(
             ax.plot(do[0], do[1], 'o', color=color)
 
             ax2.plot(count, distance, 'o', color=color)
-            val = abs(min(ziped_frame_distances[count][:frame+1])-distance)/min(ziped_frame_distances[count][:frame+1])
-            ax6.plot(count, val,'o', color='black')
+            val = abs(min(ziped_frame_distances[count])-distance)/min(ziped_frame_distances[count])
+            ax6.plot(count, val, 'o', color='black')
             ax4.plot(count, center_distance, 'o', color=color)
+            val = abs(max(ziped_center_distances[count]) - distance) / max(ziped_center_distances[count])
+            ax8.plot(count, val, 'o', color='black')
 
             count += 1
 
@@ -200,6 +209,7 @@ def build_graphs(
         ax2.clear()
         ax4.clear()
         ax6.clear()
+        ax8.clear()
 
 
 def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel):
@@ -264,19 +274,18 @@ def save_fig_to_list(fig):
 
 
 # snake_segmentation_dots('/Users/antva-onioneto/Downloads/OUTPUT_TESTING/patient150_frame12.nii')
-# snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii')
-# snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii')
-snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii',
-                        '/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_2_13_0000.nii')
-imageio.mimsave('/Users/antonioneto/Downloads/animation.gif', fig_list)
+#snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
+#snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii')
+#snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii',
+ #                       '/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_2_13_0000.nii')
 # show_gif_loop('/Users/antonioneto/Downloads/animation.gif')
 
-import subprocess
+#import subprocess
 
-try:
-    cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
-    subprocess.run(cmd, shell=True)
-finally:
+#try:
+ #   cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
+  #  subprocess.run(cmd, shell=True)
+#finally:
     # cmd = "rm /Users/antonioneto/Downloads/animation.gif"
     # subprocess.run(cmd, shell=True)
-    print("Task finished")
+    #print("Task finished")
