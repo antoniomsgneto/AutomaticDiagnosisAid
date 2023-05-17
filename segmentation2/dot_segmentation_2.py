@@ -38,6 +38,12 @@ color_cycle = itertools.cycle(
      "#ffffff", "#000000"])
 
 
+def generate_colors(number_of_colors):
+    return list(plt.cm.get_cmap('tab20')(np.linspace(0, 1, number_of_colors)))
+
+
+color_cycle = itertools.cycle(generate_colors(20))
+
 @dataclass
 class SnakeSettings:
     nr_of_points: int
@@ -82,8 +88,8 @@ def snake_segmentation_dots(
     multiple_frame_dots = []
     multiple_frame_distances = []
     multiple_frame_center_distances = []
-
-
+    multiple_frame_outer_center_distances = []
+    center_of_mass_list = []
     image = nib.load(path_to_file)
     try:
         image_origin = nib.load(path_to_origin)
@@ -100,6 +106,8 @@ def snake_segmentation_dots(
             np_pixdata = np.where(np_pixdata == SegmentationLevel.RV.value, 0, np_pixdata)
             an_array = np.where(np_pixdata < SegmentationLevel.LV.value, 0, np_pixdata)
             center_of_mass = ndimage.measurements.center_of_mass(an_array)
+            print(center_of_mass)
+            center_of_mass_list.append(center_of_mass)
             print("Applying Snakes")
             for seg_level in SegmentationLevel:
                 if seg_level.value != SegmentationLevel.RV.value:
@@ -112,46 +120,53 @@ def snake_segmentation_dots(
             distances = [d[2] for d in dots]  # Gets list of distances
             multiple_frame_distances.append(distances)
             center_distances = [d[3] for d in dots]
+            outer_center_distances = [d[4] for d in dots]
             multiple_frame_center_distances.append(center_distances)
+            multiple_frame_outer_center_distances.append(outer_center_distances)
         except Exception as e:
             fig_list.clear()
             print(e)
     print("Building Graphs")
     build_graphs(
         image_origin, image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots,
-        multiple_frame_center_distances
+        multiple_frame_center_distances, multiple_frame_outer_center_distances, center_of_mass_list
     )
 
     imageio.mimsave(path_to_output, fig_list)
 
 def build_graphs(
     image_origin, image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots,
-    multiple_frame_center_distances
+    multiple_frame_center_distances, multiple_frame_outer_center_distances, center_of_mass_list
 ):
     fig = plt.figure(figsize=(18, 9))
-    gs = fig.add_gridspec(2, 4, width_ratios=[2, 1, 1, 1], height_ratios=[2, 2])
-    ax = fig.add_subplot(gs[0:2, 0:2])
+    gs = fig.add_gridspec(3, 6, width_ratios=[2, 1, 1, 0,1, 0], height_ratios=[2, 2, 2])
+    ax = fig.add_subplot(gs[0:3, 0:2])
     ax2 = fig.add_subplot(gs[0, 2])
-
-    ax3 = fig.add_subplot(gs[0, 3])
+    ax3 = fig.add_subplot(gs[0, 4])
     ax4 = fig.add_subplot(gs[1, 2])
-    ax5 = fig.add_subplot(gs[1, 3])
+    ax5 = fig.add_subplot(gs[1, 4])
+    ax9 = fig.add_subplot(gs[2, 2])
+    ax11 = fig.add_subplot(gs[2, 4])
     ax6 = ax2.twinx()
     ax8 = ax4.twinx()
-    ax3.set_xlim(0, 30)
-    ax5.set_xlim(0, 30)
+    ax10 = ax9.twinx()
+
     ax3.set_ylim(0, 20)
-    ax5.set_ylim(10, 60)
+    ax5.set_ylim(0, 70)
+    ax11.set_ylim(0, 70)
     ax3.set_title('thickness')
     ax5.set_title('center distance')
+    ax11.set_title('outer center distance')
+
     custom_lines = []
     custom_lines2 = []
     ziped_frame_distances = list(zip(*multiple_frame_distances))
     ziped_center_distances = list(zip(*multiple_frame_center_distances))
+    ziped_outer_center_distance = list(zip(*multiple_frame_outer_center_distances))
     for index, val in enumerate(ziped_frame_distances):
         dist = list(val)
         color = next(color_cycle)
-        ax3.plot(dist, color)
+        ax3.plot(dist, color=color)
         custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
                                    color=color, lw=4))
         custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
@@ -163,20 +178,33 @@ def build_graphs(
     for index, val in enumerate(zip(*multiple_frame_center_distances)):
         dist = list(val)
         color = next(color_cycle)
-        ax5.plot(dist, color)
+        ax5.plot(dist, color=color)
         custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
                                    color=color, lw=4))
         custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
                                     color=color, lw=4))
     fig.legend(title='Center Distance', handles=custom_lines, loc='upper left')
     fig.legend(title='Distance Percentage', handles=custom_lines2, loc='lower left')
+
+    for index, val in enumerate(zip(*multiple_frame_outer_center_distances)):
+        dist = list(val)
+        color = next(color_cycle)
+        ax11.plot(dist, color=color)
+        custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
+                                   color=color, lw=4))
+        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
+                                    color=color, lw=4))
+
     for frame in range(len(multiple_frame_snakes)):
         ax2.set_ylim(0, 20)
         ax6.set_ylim(0, 1)
         ax8.set_ylim(0, 1)
-        ax4.set_ylim(10, 60)
+        ax4.set_ylim(0, 60)
+        ax9.set_ylim(0, 60)
+        ax10.set_ylim(0, 1)
         ax2.set_title('thickness')
         ax4.set_title('center distance')
+        ax9.set_title('outer center distance')
         if image_origin:
             img = image_origin.get_data()[:, :, frame]
         else:
@@ -184,22 +212,27 @@ def build_graphs(
         ax.imshow(img)
         # Print Raw Snakes
         snakes = multiple_frame_snakes[frame]
+        ax.plot(center_of_mass_list[frame][1],center_of_mass_list[frame][0],'o', color='r')
         for index in snakes:
             ax.plot(snakes[index][:, 1], snakes[index][:, 0], snake_colors[index], lw=3)
         dots = multiple_frame_dots[frame]
         # Print Dots
         count = 0
-        for d, do, distance, center_distance in dots:
+        for d, do, distance, center_distance, outer_center_distance in dots:
             color = next(color_cycle)
             ax.plot(d[0], d[1], 'o', color=color)
             ax.plot(do[0], do[1], 'o', color=color)
-
             ax2.plot(count, distance, 'o', color=color)
+            ax9.plot(count, outer_center_distance, 'o', color=color)
+
             val = abs(min(ziped_frame_distances[count])-distance)/min(ziped_frame_distances[count])
             ax6.plot(count, val, 'o', color='black')
             ax4.plot(count, center_distance, 'o', color=color)
-            val = abs(max(ziped_center_distances[count]) - distance) / max(ziped_center_distances[count])
+            val = abs(max(ziped_center_distances[count]) - center_distance) / max(ziped_center_distances[count])
             ax8.plot(count, val, 'o', color='black')
+            val = abs(max(ziped_outer_center_distance[count]) - outer_center_distance) / max(ziped_outer_center_distance[count])
+            ax10.plot(count, val, 'o', color='black')
+
 
             count += 1
 
@@ -210,7 +243,8 @@ def build_graphs(
         ax4.clear()
         ax6.clear()
         ax8.clear()
-
+        ax9.clear()
+        ax10.clear()
 
 def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel):
     snake_settings = settings[seg_level]
@@ -231,12 +265,12 @@ def add_dots(pixel_area, center_of_mass, snake_list):
     res = []
 
     inner_snake = snake_list[SegmentationLevel.LV.value]
-    outter_snake = snake_list[SegmentationLevel.MYO.value]
+    outer_snake = snake_list[SegmentationLevel.MYO.value]
 
-    xn2 = outter_snake[:, 1]  # inner
-    yn2 = outter_snake[:, 0]
-    xn = inner_snake[:, 1]  # outter
-    yn = inner_snake[:, 0]
+    xn = outer_snake[:, 1]  # inner
+    yn = outer_snake[:, 0]
+    xn2 = inner_snake[:, 1]  # outter
+    yn2 = inner_snake[:, 0]
 
     contour = LinearRing([(xn[j], yn[j]) for j in range(len(xn))])
     for i in range(len(xn2)):
@@ -257,8 +291,11 @@ def add_dots(pixel_area, center_of_mass, snake_list):
                 distance = distance1
                 intersect = intersect[1]
             try:
-                center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
-                res.append([(intersect.x, intersect.y), (xn2[i], yn2[i]), distance, center_distance])
+                center_distance = spatial_distance.euclidean(center_of_mass, (yn2[i], xn2[i]))
+                print(center_distance,center_of_mass, (yn[i], xn[i]))
+                outer_center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
+                print(outer_center_distance, center_of_mass, (yn2[i], xn2[i]))
+                res.append([(intersect.x, intersect.y), (xn2[i], yn2[i]), distance, center_distance, outer_center_distance])
             except Exception as e:
                 print(e)
     return res
@@ -275,17 +312,17 @@ def save_fig_to_list(fig):
 
 # snake_segmentation_dots('/Users/antva-onioneto/Downloads/OUTPUT_TESTING/patient150_frame12.nii')
 #snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
-#snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii')
+snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
 #snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii',
  #                       '/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_2_13_0000.nii')
 # show_gif_loop('/Users/antonioneto/Downloads/animation.gif')
 
-#import subprocess
+import subprocess
 
-#try:
- #   cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
-  #  subprocess.run(cmd, shell=True)
-#finally:
+try:
+   cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
+   subprocess.run(cmd, shell=True)
+finally:
     # cmd = "rm /Users/antonioneto/Downloads/animation.gif"
     # subprocess.run(cmd, shell=True)
-    #print("Task finished")
+    print("Task finished")
