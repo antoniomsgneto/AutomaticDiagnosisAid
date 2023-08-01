@@ -2,7 +2,7 @@ import datetime
 from os import listdir
 import sys
 
-from segmentation2.dot_segmentation_2 import snake_segmentation_dots
+from segmentation.dot_segmentation_2 import snake_segmentation_dots
 
 if __name__ == '__main__':
     if sys.argv[1]:

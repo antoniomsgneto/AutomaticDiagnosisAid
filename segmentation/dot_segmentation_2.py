@@ -5,11 +5,10 @@ import imageio
 import nibabel as nib
 import numpy as np
 from matplotlib import pyplot as plt
-from skimage.segmentation import active_contour, morphological_chan_vese, find_boundaries, checkerboard_level_set
+from skimage.segmentation import active_contour
 from skimage.color import rgb2gray
 from skimage.filters import gaussian
 from scipy import ndimage
-from skimage import measure
 
 from sympy.geometry import Line
 from sympy import Point as P
@@ -33,17 +32,15 @@ class SegmentationLevel(Enum):
 
 snake_colors = {3: '-r', 2: '-b'}
 
-color_cycle = itertools.cycle(
-    ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f",
-     "#17becf", "#1f76a4", "#ff7a8e", "#2cb12c", "#f52728", "#3457bd", "#8d664b", "#e377d2", "#ccfa22",
-     "#ffffff", "#000000"])
-
 
 def generate_colors(number_of_colors):
     return list(plt.cm.get_cmap('tab20')(np.linspace(0, 1, number_of_colors)))
 
 
 color_cycle = itertools.cycle(generate_colors(20))
+NR_OF_POINTS = 400
+NR_OF_INTEREST_POINTS = 20
+POINT_INTERVAL = NR_OF_POINTS / NR_OF_INTEREST_POINTS
 
 
 @dataclass
@@ -53,28 +50,22 @@ class SnakeSettings:
     alpha: float
     beta: float
     gamma: float
-    w_line: float
-    w_edge: float
 
 
 settings = {
     SegmentationLevel.LV: SnakeSettings(
-        nr_of_points=100,
+        nr_of_points=NR_OF_POINTS,
         max_iterations=500,
-        alpha=0,
-        beta=1,
+        alpha=0.015,
+        beta=10,
         gamma=0.001,
-        w_line=-1.0,
-        w_edge=10
     ),
     SegmentationLevel.MYO: SnakeSettings(
-        nr_of_points=100,
+        nr_of_points=NR_OF_POINTS,
         max_iterations=500,
-        alpha=0,
-        beta=1,
+        alpha=0.015,
+        beta=10,
         gamma=0.001,
-        w_line=-1.0,
-        w_edge=10
     )
 }
 
@@ -100,7 +91,7 @@ def snake_segmentation_dots(
     pixdim_xyz = image.header["pixdim"][1:4]
     pixel_area = pixdim_xyz[0] * pixdim_xyz[1]
 
-    for frame in range(0, 10):  # len(image.get_data()[:, :])):
+    for frame in range(0, len(image.get_data()[:, :])):
         try:
             snakes = {}
             img = image.get_data()[:, :, frame]
@@ -111,12 +102,9 @@ def snake_segmentation_dots(
             print(center_of_mass)
             center_of_mass_list.append(center_of_mass)
             print("Applying Snakes")
-            #for seg_level in SegmentationLevel:
-            #    if seg_level.value != SegmentationLevel.RV.value:
-            #        snakes[seg_level.value] = snake_seg(np_pixdata, center_of_mass, seg_level)
-            snake_res = snake_seg(np_pixdata, center_of_mass)
-            snakes[SegmentationLevel.MYO]=snake_res[1]
-            snakes[SegmentationLevel.LV]=snake_res[0]
+            for seg_level in SegmentationLevel:
+                if seg_level.value != SegmentationLevel.RV.value:
+                    snakes[seg_level.value] = snake_seg(np_pixdata, center_of_mass, seg_level)
             multiple_frame_snakes.append(snakes)
 
             print("Applying Dots")
@@ -175,7 +163,7 @@ def build_graphs(
         ax3.plot(dist, color=color)
         custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
                                    color=color, lw=4))
-        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist)) if max(dist) > 0 else 0),
+        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
                                     color=color, lw=4))
     fig.legend(title='Thickness', handles=custom_lines, loc='upper right')
     fig.legend(title='Thickening', handles=custom_lines2, loc='lower right')
@@ -198,7 +186,7 @@ def build_graphs(
         ax11.plot(dist, color=color)
         custom_lines.append(Line2D([0], [0], label=f"{round(min(dist), 2)} - {round(max(dist), 2)} mm",
                                    color=color, lw=4))
-        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist)) if max(dist)>0 else 0),
+        custom_lines2.append(Line2D([0], [0], label='{:.2%}'.format(calculate_thickening(max(dist), min(dist))),
                                     color=color, lw=4))
 
     for frame in range(len(multiple_frame_snakes)):
@@ -219,9 +207,8 @@ def build_graphs(
         # Print Raw Snakes
         snakes = multiple_frame_snakes[frame]
         ax.plot(center_of_mass_list[frame][1], center_of_mass_list[frame][0], 'o', color='r')
-        for index in [SegmentationLevel.MYO,SegmentationLevel.LV]:
-            # ax.contour(snakes[index], [0.5], colors='r')
-            ax.plot(snakes[index][:, 1], snakes[index][:, 0], snake_colors[index.value], lw=3)
+        for index in snakes:
+            ax.plot(snakes[index][:, 1], snakes[index][:, 0], snake_colors[index], lw=3)
         dots = multiple_frame_dots[frame]
         # Print Dots
         count = 0
@@ -232,14 +219,13 @@ def build_graphs(
             ax2.plot(count, distance, 'o', color=color)
             ax9.plot(count, outer_center_distance, 'o', color=color)
 
-            val = 0 #abs(min(ziped_frame_distances[count]) - distance) / min(ziped_frame_distances[count]) if min(ziped_frame_distances[count])>0 else 0
+            val = abs(min(ziped_frame_distances[count]) - distance) / min(ziped_frame_distances[count])
             ax6.plot(count, val, 'o', color='black')
             ax4.plot(count, center_distance, 'o', color=color)
-            val = 0#abs(max(ziped_center_distances[count]) - center_distance) / max(ziped_center_distances[count]) if max(ziped_center_distances[count])>0 else 0
+            val = abs(max(ziped_center_distances[count]) - center_distance) / max(ziped_center_distances[count])
             ax8.plot(count, val, 'o', color='black')
-            val = 0#abs(max(ziped_outer_center_distance[count]) - outer_center_distance) / max(
-               # ziped_outer_center_distance[count]) if max(
-               # ziped_outer_center_distance[count]) > 0 else 0
+            val = abs(max(ziped_outer_center_distance[count]) - outer_center_distance) / max(
+                ziped_outer_center_distance[count])
             ax10.plot(count, val, 'o', color='black')
 
             count += 1
@@ -255,78 +241,58 @@ def build_graphs(
         ax10.clear()
 
 
-def snake_seg(np_pixdata, center_of_mass):#, seg_level: SegmentationLevel):
-    #snake_settings = settings[seg_level]
-    an_array = np.where(np_pixdata != 2, 0, np_pixdata)
+def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel):
+    snake_settings = settings[seg_level]
+    an_array = np.where(np_pixdata < seg_level.value, 0, np_pixdata)
     img = rgb2gray(an_array)
-    s = np.linspace(0, 2 * np.pi,400) #snake_settings.nr_of_points)
+    s = np.linspace(0, 2 * np.pi, snake_settings.nr_of_points)
     r = center_of_mass[0] + 350 * np.sin(s)
     c = center_of_mass[1] + 350 * np.cos(s)
     init = np.array([r, c]).T
-    init_ls = checkerboard_level_set(an_array.shape, 6)
-    # List with intermediate results for plotting the evolution
-    evolution = []
-    morph = morphological_chan_vese(an_array, iterations=10, init_level_set=init_ls,
-                                 smoothing=3)
-    contours = measure.find_contours(morph, 0.5)
-    res = []
-    for i in contours:
-        if len(i) > 100:
-            res.append(i)
-    return res
-
-    #contour = np.where(morph >= 1)
-    snake = active_contour(
-        gaussian(img, 3),
-        init, boundary_condition="periodic",
-        alpha=snake_settings.alpha, beta=snake_settings.beta, gamma=snake_settings.gamma,
-        w_line=snake_settings.w_line, w_edge=snake_settings.w_edge,
-        max_iterations=snake_settings.max_iterations
-    )
-    return res
+    return active_contour(gaussian(img, 3),
+                          init, boundary_condition="periodic",
+                          alpha=snake_settings.alpha, beta=snake_settings.beta, gamma=snake_settings.gamma,
+                          max_iterations=snake_settings.max_iterations)
 
 
 def add_dots(pixel_area, center_of_mass, snake_list):
     res = []
 
-    inner_snake = snake_list[SegmentationLevel.LV]
-    outer_snake = snake_list[SegmentationLevel.MYO]
+    inner_snake = snake_list[SegmentationLevel.LV.value]
+    outer_snake = snake_list[SegmentationLevel.MYO.value]
 
-    xn = outer_snake[:, 1]  # inner
+    xn = outer_snake[:, 1]  # outer
     yn = outer_snake[:, 0]
-    xn2 = inner_snake[:, 1]  # outter
+    xn2 = inner_snake[:, 1]  # inner
     yn2 = inner_snake[:, 0]
 
-    contour = LinearRing([(float(xn[j]), float(yn[j])) for j in range(len(xn))])
+    contour = LinearRing([(xn[j], yn[j]) for j in range(len(xn))])
     for i in range(len(xn2)):
-        try:
-            if i % 50 == 0:
-                l = Line(P(float(xn2[i - 1]), float(yn2[i - 1]), evaluate=False), P(float(xn2[i + 1]), float(yn2[i + 1]), evaluate=False))
-                lin = l.perpendicular_line(P(float(xn2[i]), float(yn2[i])))
-                l = lin.coefficients
-                m = l[0] / (-l[1])
-                b = l[2] / (-l[1])
-                line = LineString([(0, b), (400, (m * 400) + b)])
-                intersect = line.intersection(contour)
-                distance0 = intersect[0].distance(Point(xn2[i], yn2[i])) * pixel_area
-                distance1 = intersect[1].distance(Point(xn2[i], yn2[i])) * pixel_area
-                if distance0 < distance1:
-                    distance = distance0
-                    intersect = intersect[0]
-                else:
-                    distance = distance1
-                    intersect = intersect[1]
-
-                    center_distance = spatial_distance.euclidean(center_of_mass, (yn2[i], xn2[i]))
-                    #print(center_distance, center_of_mass, (yn[i], xn[i]))
-                    outer_center_distance = 0 # spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
-                    print(outer_center_distance, center_of_mass, (yn2[i], xn2[i]))
-                    a = intersect.xy[0][0]
-                    print(a)
-                    res.append(
-                        [(float(intersect.xy[0][0]), float(intersect.xy[1][0])), (xn2[i], yn2[i]), distance, center_distance, outer_center_distance])
-        except Exception as e:
-            print(e)
+        if i % POINT_INTERVAL == 0:
+            l = Line(P(xn2[i - 1], yn2[i - 1], evaluate=False), P(xn2[i + 1], yn2[i + 1], evaluate=False))
+            lin = l.perpendicular_line(P(xn2[i], yn2[i]))
+            l = lin.coefficients
+            m = l[0] / (-l[1])
+            b = l[2] / (-l[1])
+            line = LineString([(0, b), (400, (m * 400) + b)])
+            intersect = line.intersection(contour)
+            distance0 = intersect[0].distance(Point(xn2[i], yn2[i])) * pixel_area
+            distance1 = intersect[1].distance(Point(xn2[i], yn2[i])) * pixel_area
+            if distance0 < distance1:
+                distance = distance0
+                intersect = intersect[0]
+            else:
+                distance = distance1
+                intersect = intersect[1]
+            try:
+                center_distance = spatial_distance.euclidean(center_of_mass, (yn2[i], xn2[i]))
+                print(center_distance, center_of_mass, (yn[i], xn[i]))
+                outer_center_distance = spatial_distance.euclidean(center_of_mass, (yn[i], xn[i]))
+                print(outer_center_distance, center_of_mass, (yn2[i], xn2[i]))
+                res.append(
+                    [(intersect.x, intersect.y), (xn2[i], yn2[i]), distance, center_distance, outer_center_distance])
+            except Exception as e:
+                print(e)
     return res
 
 
@@ -339,21 +305,16 @@ def save_fig_to_list(fig):
     fig_list.append(image)
 
 
-# snake_segmentation_dots('/Users/antva-onioneto/Downloads/OUTPUT_TESTING/patient150_frame12.nii')
-# snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
-snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_MCH1_11.nii',
-                        '/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii',
-                        '/Users/antonioneto/Downloads/animation.gif')
-# snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_2_13.nii',
-#                       '/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_2_13_0000.nii')
-# show_gif_loop('/Users/antonioneto/Downloads/animation.gif')
 
+#FOR TESTING
+snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
 import subprocess
 
 try:
     cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
     subprocess.run(cmd, shell=True)
 finally:
-    # cmd = "rm /Users/antonioneto/Downloads/animation.gif"
-    # subprocess.run(cmd, shell=True)
+    cmd = "rm /Users/antonioneto/Downloads/animation.gif"
+    subprocess.run(cmd, shell=True)
     print("Task finished")
+
