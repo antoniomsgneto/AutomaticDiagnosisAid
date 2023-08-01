@@ -70,7 +70,7 @@ def __get_trigger_time(ds) -> int:
     return dicom.read_file(ds)[0x00181060].value
 
 
-def  Nconvert_slice_folder_to_nifti(path_to_dicom_folder, path_to_result_folder):
+def  convert_slice_folder_to_nifti(path_to_dicom_folder, path_to_result_folder):
     unstacked_list = []
     width = 512
     height = 512
@@ -127,6 +127,7 @@ def save_array_list_to_nifti(list_of_arrays, width, height,path_to_result_folder
     result = convert_list_of_pixel_array_to_nifti(list_of_arrays, width, height)
     result = result.__class__(result.get_fdata(), affine, header)
     nib.save(result, path_to_result_folder)
+
 def main():
     if sys.argv[0]:
         for count, dir in enumerate(os.listdir(sys.argv[1])):
