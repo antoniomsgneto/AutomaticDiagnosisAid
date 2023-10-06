@@ -30,6 +30,12 @@ class SegmentationLevel(Enum):
     RV = 1
 
 
+class SegmentationSlice(Enum):
+    APEX = 1
+    MID = 2
+    BASE = 3
+
+
 snake_colors = {3: '-r', 2: '-b'}
 
 
@@ -37,45 +43,81 @@ def generate_colors(number_of_colors):
     return list(plt.cm.get_cmap('tab20')(np.linspace(0, 1, number_of_colors)))
 
 
-color_cycle = itertools.cycle(generate_colors(20))
-NR_OF_POINTS = 400
-NR_OF_INTEREST_POINTS = 20
+
+NR_OF_POINTS = 75
+NR_OF_INTEREST_POINTS = 75
+color_cycle = itertools.cycle(generate_colors(NR_OF_INTEREST_POINTS))
 POINT_INTERVAL = NR_OF_POINTS / NR_OF_INTEREST_POINTS
 
 
 @dataclass
 class SnakeSettings:
     nr_of_points: int
-    max_iterations: int
-    alpha: float
-    beta: float
     gamma: float
+    gaussian_sigma: int
+    w_edge: float
+    w_line: float
 
 
 settings = {
-    SegmentationLevel.LV: SnakeSettings(
-        nr_of_points=NR_OF_POINTS,
-        max_iterations=1500,
-        alpha=0.015,
-        beta=10,
-        gamma=0.001,
-    ),
-    SegmentationLevel.MYO: SnakeSettings(
-        nr_of_points=NR_OF_POINTS,
-        max_iterations=1500,
-        alpha=0.015,
-        beta=10,
-        gamma=0.001,
-    )
+    SegmentationSlice.APEX: {
+        SegmentationLevel.LV: SnakeSettings(
+            nr_of_points=75,
+            gamma=0.005,
+            gaussian_sigma=1,
+            w_edge=2,
+            w_line=-0.5,
+        ),
+        SegmentationLevel.MYO: SnakeSettings(
+            nr_of_points=100,
+            gamma=0.005,
+            gaussian_sigma=1,
+            w_edge=3,
+            w_line=-0.5,
+        )
+    },
+    SegmentationSlice.MID: {
+            SegmentationLevel.LV: SnakeSettings(
+                nr_of_points=100,
+                gamma=0.005,
+                gaussian_sigma=1,
+                w_edge=2,
+                w_line=0,
+            ),
+            SegmentationLevel.MYO: SnakeSettings(
+                nr_of_points=500,
+                gamma=0.0002,
+                gaussian_sigma=2,
+                w_edge=1,
+                w_line=0,
+            )
+    },
+    SegmentationSlice.BASE: {
+            SegmentationLevel.LV: SnakeSettings(
+                nr_of_points=100,
+                gamma=0.005,
+                gaussian_sigma=1,
+                w_edge=2,
+                w_line=0,
+            ),
+            SegmentationLevel.MYO: SnakeSettings(
+                nr_of_points=500,
+                gamma=0.0002,
+                gaussian_sigma=2,
+                w_edge=2,
+                w_line=0,
+            )
+    },
 }
 
 fig_list = []
 
 
 def snake_segmentation_dots(
-    path_to_file,
-    path_to_origin,
-    path_to_output
+        path_to_file,
+        path_to_origin,
+        path_to_output,
+        slice_type
 ):
     multiple_frame_snakes = []
     multiple_frame_dots = []
@@ -85,7 +127,7 @@ def snake_segmentation_dots(
     center_of_mass_list = []
     image = nib.load(path_to_file)
     try:
-        image_origin = nib.load(path_to_origin+'.g')
+        image_origin = nib.load(path_to_origin)
     except:
         image_origin = None
     pixdim_xyz = image.header["pixdim"][1:4]
@@ -104,7 +146,7 @@ def snake_segmentation_dots(
             print("Applying Snakes")
             for seg_level in SegmentationLevel:
                 if seg_level.value != SegmentationLevel.RV.value:
-                    snakes[seg_level.value] = snake_seg(np_pixdata, center_of_mass, seg_level)
+                    snakes[seg_level.value] = snake_seg(np_pixdata, center_of_mass, seg_level, slice_type)
             multiple_frame_snakes.append(snakes)
 
             print("Applying Dots")
@@ -129,8 +171,8 @@ def snake_segmentation_dots(
 
 
 def build_graphs(
-    image_origin, image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots,
-    multiple_frame_center_distances, multiple_frame_outer_center_distances, center_of_mass_list
+        image_origin, image, multiple_frame_distances, multiple_frame_snakes, multiple_frame_dots,
+        multiple_frame_center_distances, multiple_frame_outer_center_distances, center_of_mass_list
 ):
     fig = plt.figure(figsize=(18, 9))
     gs = fig.add_gridspec(3, 6, width_ratios=[2, 1, 1, 0, 1, 0], height_ratios=[2, 2, 2])
@@ -241,19 +283,19 @@ def build_graphs(
         ax10.clear()
 
 
-def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel):
-    snake_settings = settings[seg_level]
+def snake_seg(np_pixdata, center_of_mass, seg_level: SegmentationLevel, slice: SegmentationSlice):
+    snake_settings = settings[slice][seg_level]
     an_array = np.where(np_pixdata < seg_level.value, 0, np_pixdata)
     s = np.linspace(0, 2 * np.pi, snake_settings.nr_of_points)
     r = center_of_mass[0] + 350 * np.sin(s)
     c = center_of_mass[1] + 350 * np.cos(s)
     init = np.array([r, c]).T
-    return active_contour(gaussian(an_array, 3),
+    return active_contour(gaussian(an_array, snake_settings.gaussian_sigma),
                           init, boundary_condition="periodic",
-                          alpha=snake_settings.alpha, beta=snake_settings.beta, gamma=snake_settings.gamma,
-                          w_line=-1.0,
-                          w_edge=10,
-                          max_iterations=snake_settings.max_iterations)
+                          gamma=snake_settings.gamma,
+                          w_edge=snake_settings.w_edge,
+                          w_line=snake_settings.w_line
+                          )
 
 
 def add_dots(pixel_area, center_of_mass, snake_list):
@@ -270,7 +312,8 @@ def add_dots(pixel_area, center_of_mass, snake_list):
     contour = LinearRing([(xn[j], yn[j]) for j in range(len(xn))])
     for i in range(len(xn2)):
         if i % POINT_INTERVAL == 0:
-            l = Line(P(xn2[i - 1], yn2[i - 1], evaluate=False), P(xn2[i + 1], yn2[i + 1], evaluate=False))
+            next_point = i + 1 if i + 1 < len(xn2) else 0
+            l = Line(P(xn2[i - 1], yn2[i - 1], evaluate=False), P(xn2[next_point], yn2[next_point], evaluate=False))
             lin = l.perpendicular_line(P(xn2[i], yn2[i]))
             l = lin.coefficients
             m = l[0] / (-l[1])
@@ -304,23 +347,19 @@ def save_fig_to_list(fig):
     # Open the image from the buffer and append it to the list
     image = Image.open(buf)
     fig_list.append(image)
-"""
 
 
-
-snake_segmentation_dots('/Users/antonioneto/Antonio/tese/Dados/OUTPUT_DIRECTORY_3D/Patient_CMD7_10.nii','/Users/antonioneto/Antonio/tese/Dados/Nifti/Patient_MCH1_11_0000.nii','/Users/antonioneto/Downloads/animation.gif')
+snake_segmentation_dots('/Users/antonioneto/Downloads/DATESET_CASELAS_OUTPUT/Patient_6_2.nii.gz',
+                        '/Users/antonioneto/Downloads/Nifti/Patient_6_2_0000.nii.gz',
+                        '/Users/antonioneto/Downloads/animation.gif', SegmentationSlice.APEX)
 import subprocess
 
 try:
     cmd = "open -a 'google chrome' /Users/antonioneto/Downloads/animation.gif"
     subprocess.run(cmd, shell=True)
 finally:
-    cmd = "rm /Users/antonioneto/Downloads/animation.gif"
-    subprocess.run(cmd, shell=True)
+    #cmd = "rm /Users/antonioneto/Downloads/animation.gif"
+    #subprocess.run(cmd, shell=True)
     print("Task finished")
 
-
-#FOR TESTING
-"""
-
-
+# FOR TESTING
